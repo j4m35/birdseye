@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1e293b">
+  <title>Birdseye - Aviation Weather</title>
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin="">
+  
+  <!-- App Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Header / Status Bar -->
+  <header id="app-header">
+    <div class="header-left">
+      <h1>Birdseye</h1>
+    </div>
+    <div class="header-right">
+      <button id="btn-refresh" class="btn-icon" title="Refresh Now">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+      </button>
+      <button id="btn-notifications" class="btn-icon" title="Toggle Notifications">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Status Bar -->
+  <div id="status-bar">
+    <span id="status-text">Initializing...</span>
+    <span id="countdown-text" class="countdown"></span>
+  </div>
+
+  <!-- Map Container -->
+  <div id="map-container"></div>
+
+  <!-- Legend Overlay -->
+  <div id="legend-overlay">
+    <div class="legend-item">
+      <span class="legend-dot green"></span>
+      <span>VFR</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-dot yellow"></span>
+      <span>MVFR</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-dot red"></span>
+      <span>IFR / Severe</span>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+          crossorigin=""></script>
+
+  <!-- App Modules -->
+  <script src="taf-parser.js"></script>
+  <script src="state-manager.js"></script>
+  <script src="map-renderer.js"></script>
+  <script src="fetch-scheduler.js"></script>
+  <script src="notification-manager.js"></script>
+  <script src="app.js"></script>
+
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./service-worker.js')
+          .then(function(registration) {
+            console.log('[Service Worker] Registered:', registration.scope);
+            
+            // Check for updates
+            registration.addEventListener('updatefound', function() {
+              const newWorker = registration.installing;
+              newWorker.addEventListener('statechange', function() {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('[Service Worker] New content available!');
+                }
+              });
+            });
+          })
+          .catch(function(error) {
+            console.error('[Service Worker] Registration failed:', error);
+          });
+      });
+    }
+  </script>
+</body>
+</html>
