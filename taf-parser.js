@@ -11,7 +11,7 @@ const TafParser = (function() {
 
   // Severe weather phenomena patterns
   const SEVERE_WEATHER = [
-    /TS[A-Z]*/g,    // Thunderstorm (TS, TSRA, +TSRA, -TSRA, TSGR, etc.)
+    /TS/g,    // Thunderstorm (TS, TSRA, +TSRA, -TSRA, TSGR, etc.)
     /SQ/g,          // Squall
     /FZRA/g,        // Freezing rain
     /TL(?=\s|$)/g,  // Tornado (less common in TAF but included)
@@ -226,27 +226,33 @@ const TafParser = (function() {
 
   /**
    * Determine the overall condition of a TAF section
+   * Dynamically uses the module's SEVERE_WEATHER and DEGRADING_WEATHER lists!
    */
   function evaluateConditions(wind, visibility, clouds, weatherPhenomena) {
     let severity = 'VFR'; // Default: Visual Flight Rules
-
-    // Check for severe weather phenomena (THREAT LEVEL - overrides everything)
     const allWeather = weatherPhenomena || [];
-    const hasThunderstorm = allWeather.some(w => w.phenomenon === 'TS');
-    const hasSquall = allWeather.some(w => w.phenomenon === 'SQ');
-    
-    if (hasThunderstorm || hasSquall) {
+
+    // --- 1. Severe Weather Check ---
+    for (const wx of allWeather) {
+      // Test the phenomenon token string against our severe regex list
+      const isSevere = SEVERE_WEATHER.some(regex => {
+        regex.lastIndex = 0; // Reset regex pointer
+        return regex.test(wx.phenomenon);
+      });
+
+      if (isSevere) {
+        console.log(`[Parser Sync] Severe weather phenomenon detected (${wx.phenomenon}). Forcing IFR.`);
+        return 'IFR'; // Instant Red Override
+      }
+    }
+
+    // --- 2. Check for high wind speeds (> 25 knots) ---
+    if (wind && (wind.speedKnots > 25 || (wind.gustKnots && wind.gustKnots > 25))) {
       severity = 'IFR'; // RED
       return severity;
     }
 
-    // Check for high wind speeds (> 25 knots)
-    if (wind && (wind.speedKnots > 25 || (wind.gustKnots && wind.gustKnots > 35))) {
-      severity = 'IFR'; // RED
-      return severity;
-    }
-
-    // Check visibility (< 5000m = MVFR, < 1500m = IFR)
+    // --- 3. Check visibility (< 5000m = MVFR, < 1500m = IFR) ---
     if (visibility) {
       if (visibility.value < 1500) {
         severity = 'IFR'; // RED - very low visibility
@@ -255,7 +261,7 @@ const TafParser = (function() {
       }
     }
 
-    // Check ceiling (< 1000ft = IFR, < 3000ft = MVFR)
+    // --- 4. Check ceiling (< 1000ft = IFR, < 3000ft = MVFR) ---
     if (clouds && clouds.length > 0) {
       const lowestCeiling = clouds.reduce((min, layer) => {
         const coverages = ['OVC', 'BKN', 'SCT', 'FEW'];
@@ -275,10 +281,20 @@ const TafParser = (function() {
       }
     }
 
-    // Check for significant non-weather phenomena (e.g., FZRA, GR)
-    const severePhenomena = ['FZRA', 'GR', 'GS', 'PL'];
-    if (allWeather.some(w => severePhenomena.includes(w.phenomenon))) {
-      severity = 'IFR'; // RED
+    // --- 5. Degrading Weather Check ---
+    // If it didn't trigger IFR via visibility or ceiling, check for degrading criteria (like normal rain/mist)
+    if (severity === 'VFR') {
+      for (const wx of allWeather) {
+        const isDegrading = DEGRADING_WEATHER.some(regex => {
+          regex.lastIndex = 0;
+          return regex.test(wx.phenomenon);
+        });
+        
+        if (isDegrading) {
+          severity = 'MVFR'; // Bump up to Amber/Yellow
+          break;
+        }
+      }
     }
 
     return severity;

@@ -81,10 +81,10 @@ const MapRenderer = (function() {
     const circleMarker = L.circleMarker(latlng, {
       radius: AIRPORT_CIRCLE_RADIUS,
       fillColor: color,
-      fillOpacity: 0.9,
+      fillOpacity: 1,
       color: color,
       weight: 2,
-      opacity: 0.3,
+      opacity: 0.5,
       className: 'map-airport-marker'
     }).addTo(map);
 
