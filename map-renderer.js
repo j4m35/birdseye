@@ -211,10 +211,10 @@ function updatePopup(marker, airport, condition, tafData) {
     // --- Clean up and format the Raw TAF text into structural lines ---
     // This regex looks for word boundaries matching your keywords.
     // The (?=...) ensures we find the position right BEFORE the word, so we don't delete it.
-    const lineBreakPattern = /\b(?=PROB\d{2}\s+TEMPO|TEMPO|INTER|BECMG|FM\d{4,6})\b/gi;
+    const lineBreakPattern = /\b(PROB\d{2}\s+TEMPO|TEMPO|INTER|BECMG|FM\d{4,6})\b/gi;
     
     // Format the text by replacing those positions with a newline character
-    formattedRawTAF = tafData.raw.replace(lineBreakPattern, '\n').trim();
+    formattedRawTAF = tafData.raw.replace(lineBreakPattern, '\n$1').trim();
   } else {
     formattedRawTAF = 'No TAF data available';
   }
