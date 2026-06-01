@@ -206,7 +206,7 @@ const APP = (function() {
       const airport = airports.find(a => a.icao === icao);
       if (!airport) continue;
 
-      MapRenderer.updateMarker(airport, processed[icao].condition, processed[icao].parsed);
+      MapRenderer.updateMarker(airport, processed[icao].condition, processed[icao]);
     }
   }
 
@@ -342,12 +342,7 @@ const APP = (function() {
     for (const icao in cachedStates) {
       const airport = airports.find(a => a.icao === icao);
       if (airport && cachedStates[icao].condition) {
-        // Build tafData-like object with lat/lng so map renderer can position the marker
-        const cachedTafData = {
-          lat: cachedStates[icao].lat,
-          lng: cachedStates[icao].lng
-        };
-        MapRenderer.updateMarker(airport, cachedStates[icao].condition, cachedTafData);
+        MapRenderer.updateMarker(airport, cachedStates[icao].condition, cachedStates[icao]);
       }
     }
 
