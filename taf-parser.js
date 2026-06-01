@@ -11,28 +11,28 @@ const TafParser = (function() {
 
   // Severe weather phenomena patterns
   const SEVERE_WEATHER = [
-    /TS/g,    // Thunderstorm (TS, TSRA, +TSRA, -TSRA, TSGR, etc.)
-    /SQ/g,          // Squall
-    /FZRA/g,        // Freezing rain
-    /TL(?=\s|$)/g,  // Tornado (less common in TAF but included)
-    /DS/g,          // Dust storm
-    /SS/g,          // Sandstorm
+    /TS/,    // Thunderstorm (TS, TSRA, +TSRA, -TSRA, TSGR, etc.)
+    /SQ/,          // Squall
+    /FZRA/,        // Freezing rain
+    /TL(?=\s|$)/,  // Tornado (less common in TAF but included)
+    /DS/,          // Dust storm
+    /SS/,          // Sandstorm
   ];
 
   // Degrading condition patterns
   const DEGRADING_WEATHER = [
-    /RA/g,          // Rain
-    /DZ/g,          // Drizzle
-    /SN/g,          // Snow
-    /SG/g,          // Snow grains
-    /PL/g,          // Ice pellets
-    /GR/g,          // Hail
-    /GS/g,          // Small hail
-    /BR/g,          // Mist
-    /FG/g,          // Fog
-    /HZ/g,          // Haze
-    /PO/g,          // Dust/sand whirls
-    /FC/g,          // Funnel cloud/tornado
+    /RA/,          // Rain
+    /DZ/,          // Drizzle
+    /SN/,          // Snow
+    /SG/,          // Snow grains
+    /PL/,          // Ice pellets
+    /GR/,          // Hail
+    /GS/,          // Small hail
+    /BR/,          // Mist
+    /FG/,          // Fog
+    /HZ/,          // Haze
+    /PO/,          // Dust/sand whirls
+    /FC/,          // Funnel cloud/tornado
   ];
 
   /**
@@ -197,34 +197,6 @@ const TafParser = (function() {
   }
 
   /**
-   * Determine condition severity level from weather phenomena
-   */
-  function assessWeatherSeverity(weatherPhenomena) {
-    if (!weatherPhenomena || weatherPhenomena.length === 0) {
-      return 'VFR';
-    }
-
-    let hasSevere = false;
-    let hasDegrading = false;
-
-    for (const wx of weatherPhenomena) {
-      const isSevere = SEVERE_WEATHER.some(p => p.test(wx.phenomenon));
-      const isDegrading = DEGRADING_WEATHER.some(p => p.test(wx.phenomenon));
-
-      if (isSevere && !['TS', 'SQ'].includes(wx.phenomenon)) hasSevere = true;
-      if (wx.phenomenon === 'TS' || wx.phenomenon === 'SQ') hasSevere = true;
-      if (isDegrading) hasDegrading = true;
-      
-      // VC phenomena are in vicinity, less severe
-      if (wx.vicinity && isDegrading) hasDegrading = true;
-    }
-
-    if (hasSevere) return 'IFR';
-    if (hasDegrading) return 'MVFR';
-    return 'VFR';
-  }
-
-  /**
    * Determine the overall condition of a TAF section
    * Dynamically uses the module's SEVERE_WEATHER and DEGRADING_WEATHER lists!
    */
@@ -235,10 +207,7 @@ const TafParser = (function() {
     // --- 1. Severe Weather Check ---
     for (const wx of allWeather) {
       // Test the phenomenon token string against our severe regex list
-      const isSevere = SEVERE_WEATHER.some(regex => {
-        regex.lastIndex = 0; // Reset regex pointer
-        return regex.test(wx.phenomenon);
-      });
+      const isSevere = SEVERE_WEATHER.some(regex => regex.test(wx.phenomenon));
 
       if (isSevere) {
         console.log(`[Parser Sync] Severe weather phenomenon detected (${wx.phenomenon}). Forcing IFR.`);
