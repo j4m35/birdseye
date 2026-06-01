@@ -83,7 +83,8 @@ const APP = (function() {
     
     for (let i = 0; i < tafElements.length; i++) {
       const tafEl = tafElements[i];
-      const stationId = tafEl.getAttribute('station_id') || '';
+      const stationIdEl = tafEl.getElementsByTagName('station_id')[0];
+      const stationId = stationIdEl && stationIdEl.firstChild ? stationIdEl.firstChild.nodeValue.trim() : '';
       
       if (!stationId) continue;
 
