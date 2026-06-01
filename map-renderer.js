@@ -25,11 +25,12 @@ const MapRenderer = (function() {
     // Initialize Leaflet map with CartoDB Voyager tiles (free, no API key)
     map = L.map(mapContainerId).setView([5, 107], 4);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/voyager_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/voyager_all/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
       subdomains: 'abcd',
       maxZoom: 19,
-      minZoom: 2
+      minZoom: 2,
+      detectRetina: true // Leaflet will handle high-res screens automatically and safely
     }).addTo(map);
 
     // Enable double-click zoom but handle single clicks for markers
@@ -251,6 +252,7 @@ const MapRenderer = (function() {
 
   return {
     init: init,
+    addAirportMarker : updateMarker,
     updateMarker: updateMarker,
     clearMarkers: clearMarkers,
     fitToMarkers: fitToMarkers,
@@ -264,18 +266,27 @@ function updatePopup(marker, airport, condition, tafData) {
   const color = MapRenderer.getMarkerColor ? 
     (condition === 'IFR' ? '#EF4444' : condition === 'MVFR' ? '#F59E0B' : '#22C55E') : '';
 
+  // Extract the true parsed object properties if they are nested inside a .parsed wrapper
+  const parsedData = tafData?.parsed ? tafData.parsed : tafData;
+
   // Format TAF data for display - show the parsed info nicely
   let tafHtml = '';
   
-  if (tafData && typeof tafData === 'object') {
+  if (parsedData && typeof parsedData === 'object') {
+    // Read from either parsedData or the top-level tafData as a fallback
+    const mainCond = parsedData.mainCondition || parsedData.condition || condition;
+    const groups = parsedData.groups || [];
+    const hasTemp = parsedData.hasTemporaryConditions || false;
+    const tempSev = parsedData.tempSeverity || 'N/A';
+
     tafHtml = `
       <div style="margin-top: 8px; font-size: 12px;">
-        <div><strong>Condition:</strong> <span style="color: ${color}; font-weight: bold;">${tafData.mainCondition || condition}</span></div>
-        ${tafData.hasTemporaryConditions ? `<div><strong>Temporary Conditions:</strong> Yes (Severity: ${tafData.tempSeverity || 'N/A'})</div>` : ''}
-        ${tafData.groups && tafData.groups.length > 0 ? `
+        <div><strong>Condition:</strong> <span style="color: ${color}; font-weight: bold;">${mainCond}</span></div>
+        ${hasTemp ? `<div><strong>Temporary Conditions:</strong> Yes (Severity: ${tempSev})</div>` : ''}
+        ${groups.length > 0 ? `
           <div style="margin-top: 6px;"><strong>Forecast Periods:</strong></div>
           <ul style="margin: 4px 0; padding-left: 16px;">
-            ${tafData.groups.map(g => `<li>${g.type}: ${g.condition}</li>`).join('')}
+            ${groups.map(g => `<li>${g.type}: ${g.condition}</li>`).join('')}
           </ul>
         ` : ''}
       </div>
@@ -300,6 +311,8 @@ function updatePopup(marker, airport, condition, tafData) {
           ${condition === 'IFR' ? 'IFR / Severe Weather' : condition === 'MVFR' ? 'MVFR' : 'VFR'}
         </span>
       </div>
+
+      ${tafHtml}
 
       <div style="border-top: 1px solid #e5e7eb; padding-top: 6px;">
         <div style="font-weight: bold; font-size: 12px; margin-bottom: 4px;">Raw TAF:</div>
