@@ -88,7 +88,7 @@ const APP = (function() {
       if (!stationId) continue;
 
       // Extract raw TAF text
-      const rawTafEl = tafEl.getElementsByTagName('taf')[0];
+      const rawTafEl = tafEl.getElementsByTagName('raw_text')[0];
       let rawTaf = '';
       if (rawTafEl && rawTafEl.firstChild) {
         rawTaf = rawTafEl.firstChild.nodeValue.trim();
