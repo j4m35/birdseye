@@ -182,7 +182,7 @@ const MapRenderer = (function() {
           color: ${color};
           font-weight: bold;
           font-size: 13px;
-          text-shadow: 0 0 3px rgba(255,255,255,0.9), 0 0 6px rgba(255,255,255,0.7);
+          text-shadow: 0 0 3px rgba(0,0,0,1), 0 0 6px rgba(0,0,0,0.8);
           white-space: nowrap;
         ">${airport.icao}</div>`,
         iconSize: [80, 20],
@@ -313,7 +313,7 @@ function updatePopup(marker, airport, condition, tafData) {
 
       ${tafHtml}
 
-      <div style="border-top: 1px solid #e5e7eb; padding-top: 6px;">
+      <div style="border-top: 1px solid #334155; padding-top: 6px;">
         <div style="font-weight: bold; font-size: 12px; margin-bottom: 4px;">Raw TAF:</div>
         <pre style="
           font-size: 10px; 
@@ -321,7 +321,8 @@ function updatePopup(marker, airport, condition, tafData) {
           word-break: break-all; 
           max-height: 150px; 
           overflow-y: auto;
-          background: #f9fafb;
+          background: #1e293b;
+          color: #f1f5f9;
           padding: 6px;
           border-radius: 4px;
           margin: 0;

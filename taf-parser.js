@@ -11,7 +11,7 @@ const TafParser = (function() {
 
   // Severe weather phenomena patterns
   const SEVERE_WEATHER = [
-    /TSU?/g,       // Thunderstorm
+    /TS[A-Z]*/g,    // Thunderstorm (TS, TSRA, +TSRA, -TSRA, TSGR, etc.)
     /SQ/g,          // Squall
     /FZRA/g,        // Freezing rain
     /TL(?=\s|$)/g,  // Tornado (less common in TAF but included)
@@ -29,7 +29,7 @@ const TafParser = (function() {
     /GR/g,          // Hail
     /GS/g,          // Small hail
     /BR/g,          // Mist
-    /FG[g]?/g,      // Fog
+    /FG/g,          // Fog
     /HZ/g,          // Haze
     /PO/g,          // Dust/sand whirls
     /FC/g,          // Funnel cloud/tornado
