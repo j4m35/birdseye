@@ -205,6 +205,20 @@ function updatePopup(marker, airport, condition, tafData) {
     `;
   }
 
+  let formattedRawTAF = ''
+
+  if(tafData && tafData.raw) {
+    // --- Clean up and format the Raw TAF text into structural lines ---
+    // This regex looks for word boundaries matching your keywords.
+    // The (?=...) ensures we find the position right BEFORE the word, so we don't delete it.
+    const lineBreakPattern = /\b(?=PROB\d{2}\s+TEMPO|TEMPO|INTER|BECMG|FM\d{4,6})\b/gi;
+    
+    // Format the text by replacing those positions with a newline character
+    formattedRawTAF = tafData.raw.replace(lineBreakPattern, '\n').trim();
+  } else {
+    formattedRawTAF = 'No TAF data available';
+  }
+
   const popupContent = `
     <div style="min-width: 200px;">
       <h3 style="margin: 0 0 4px 0; font-size: 16px;">${airport.name}</h3>
@@ -240,7 +254,7 @@ function updatePopup(marker, airport, condition, tafData) {
           border-radius: 4px;
           margin: 0;
           font-family: monospace;
-        ">${tafData?.raw || 'No TAF data available'}</pre>
+        ">${formattedRawTAF}</pre>
       </div>
     </div>
   `;
