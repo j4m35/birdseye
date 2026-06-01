@@ -53,93 +53,6 @@ const MapRenderer = (function() {
     }
   }
 
-  /**
-   * Add or update an airport marker on the map.
-   * Coordinates are extracted from tafData.lat/lng (from API) rather than hardcoded in airports.json.
-   */
-  function addAirportMarker(airport, condition, tafData) {
-    if (!map) {
-      init('map-container');
-    }
-
-    const color = getMarkerColor(condition);
-    // Use coordinates from API response; fall back to airport lat/lng if available (for cached data)
-    const latlng = [tafData?.lat ?? airport.lat, tafData?.lng ?? airport.lng];
-    
-    // Create or update marker
-    if (markers[airport.icao]) {
-      // Update existing marker color
-      const marker = markers[airport.icao];
-      
-      // Remove old icon and add new one with updated color
-      map.removeLayer(marker);
-      
-      // Create new circle marker
-      const circleMarker = L.circleMarker(latlng, {
-        radius: AIRPORT_CIRCLE_RADIUS,
-        fillColor: color,
-        color: '#FFFFFF',
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.9
-      }).addTo(map);
-      
-      // Add airport name label
-      const label = L.marker(latlng, {
-        icon: L.divIcon({
-          className: 'airport-label',
-          html: `<div style="
-            color: ${color};
-            font-weight: bold;
-            font-size: 13px;
-            text-shadow: 0 0 3px rgba(255,255,255,0.9), 0 0 6px rgba(255,255,255,0.7);
-            white-space: nowrap;
-          ">${airport.icao}</div>`,
-          iconSize: [80, 20],
-          iconAnchor: [40, AIRPORT_CIRCLE_OFFSET + 10]
-        }),
-        interactive: false
-      }).addTo(map);
-
-      circleMarker.label = label;
-      markers[airport.icao] = circleMarker;
-
-    } else {
-      // Create new circle marker
-      const circleMarker = L.circleMarker(latlng, {
-        radius: AIRPORT_CIRCLE_RADIUS,
-        fillColor: color,
-        color: '#FFFFFF',
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.9
-      }).addTo(map);
-      
-      // Add airport name label
-      const label = L.marker(latlng, {
-        icon: L.divIcon({
-          className: 'airport-label',
-          html: `<div style="
-            color: ${color};
-            font-weight: bold;
-            font-size: 13px;
-            text-shadow: 0 0 3px rgba(255,255,255,0.9), 0 0 6px rgba(255,255,255,0.7);
-            white-space: nowrap;
-          ">${airport.icao}</div>`,
-          iconSize: [80, 20],
-          iconAnchor: [40, AIRPORT_CIRCLE_OFFSET + 10]
-        }),
-        interactive: false
-      }).addTo(map);
-
-      circleMarker.label = label;
-      markers[airport.icao] = circleMarker;
-    }
-
-    // Update popup content with TAF data
-    updatePopup(markers[airport.icao], airport, condition, tafData);
-  }
-
   const AIRPORT_CIRCLE_OFFSET = 18;
 
   /**
@@ -168,10 +81,11 @@ const MapRenderer = (function() {
     const circleMarker = L.circleMarker(latlng, {
       radius: AIRPORT_CIRCLE_RADIUS,
       fillColor: color,
-      color: '#FFFFFF',
+      fillOpacity: 0.9,
+      color: color,
       weight: 2,
-      opacity: 1,
-      fillOpacity: 0.9
+      opacity: 0.3,
+      className: 'map-airport-marker'
     }).addTo(map);
 
     // Add airport name label
@@ -251,7 +165,6 @@ const MapRenderer = (function() {
 
   return {
     init: init,
-    addAirportMarker : updateMarker,
     updateMarker: updateMarker,
     clearMarkers: clearMarkers,
     fitToMarkers: fitToMarkers,

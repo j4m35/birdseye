@@ -200,6 +200,11 @@ html, body {
   pointer-events: none;
 }
 
+/* Translates the legend's glow layout over to the map's SVG markers */
+.map-airport-marker {
+  filter: drop-shadow(0px 0px 4px rgba(0,0,0,0.5));
+}
+
 /* ===== Custom Popup Styles ===== */
 .leaflet-popup-content-wrapper {
   background: rgba(15, 23, 42, 0.95);
