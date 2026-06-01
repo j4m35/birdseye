@@ -1,6 +1,13 @@
 [
   { "icao": "WSSS", "name": "Singapore Changi Airport" },
+  { "icao": "WMKJ", "name": "Senai International Airport" },
+  { "icao": "WMKK", "name": "Kuala Lumpur International Airport" },
   { "icao": "WIII", "name": "Jakarta Soekarno-Hatta International Airport" },
   { "icao": "VHHH", "name": "Hong Kong International Airport" },
-  { "icao": "WMKK", "name": "Kuala Lumpur International Airport" }
+  { "icao": "RJFF", "name": "Fukuoka Airport" },
+  { "icao": "RJGG", "name": "Chubu Centrair International Airport" },
+  { "icao": "RJBB", "name": "Kansai International Airport" },
+  { "icao": "RJTT", "name": "Tokyo Haneda International Airport" },
+  { "icao": "RJAA", "name": "Narita International Airport" },
+  { "icao": "RJCC", "name": "New Chitose Airport" }
 ]
