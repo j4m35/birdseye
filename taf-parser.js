@@ -323,6 +323,16 @@ const TafParser = (function() {
     // Clean up the raw TAF text (handle multi-line formats)
     const cleanText = rawTaf.replace(/\r\n/g, '\n').trim();
 
+    // Strip header: Match the structural prefix and the 4-letter ICAO code
+    // Matches patterns like "TAF WSSS", "TAF AMD WMKK", "WMKK", "TAF COR WSSS"
+    const headerPattern = /^(?:TAF\s+(?:AMD\s+|COR\s+)?)?\b([A-Z]{4})\b\s*/i;
+    const headerMatch = cleanText.match(headerPattern);
+    
+    if (headerMatch) {
+      // Completely slice the matched header (e.g., "TAF AMD WMKK ") off the text!
+      cleanText = cleanText.replace(headerPattern, '');
+    }
+
     // Split into groups: main forecast + FM/BECGRP/TEMPO sections
     const sectionPattern = /(?:FM|BECMG|TEMPO|PROB)\d{4}/g;
     const sections = [];
