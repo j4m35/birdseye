@@ -330,7 +330,7 @@ const TafParser = (function() {
     
     if (headerMatch) {
       // Completely slice the matched header (e.g., "TAF AMD WMKK ") off the text!
-      cleanText = cleanText.replace(headerPattern, '');
+      cleanText = cleanText.substring(headerMatch[0].length).trim();
     }
 
     // Split into groups: main forecast + FM/BECGRP/TEMPO sections
