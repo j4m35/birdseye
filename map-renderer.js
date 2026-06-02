@@ -218,6 +218,19 @@ function updatePopup(marker, airport, condition, tafData) {
     formattedRawTAF = 'No TAF data available';
   }
 
+  // Split the formatted TAF into an array of lines, then map each line to a distinct div block
+  const tafLinesHtml = formattedRawTAF.split('\n').map(line => {
+    return `
+      <div style="
+        padding-left: 12px; 
+        text-indent: -12px; 
+        white-space: pre-wrap; 
+        word-break: keep-all;
+        margin-bottom: 4px;
+      ">${line}</div>
+    `;
+  }).join('');
+
   const popupContent = `
     <div style="min-width: 200px;">
       <h3 style="margin: 0 0 4px 0; font-size: 16px;">${airport.name}</h3>
@@ -240,20 +253,19 @@ function updatePopup(marker, airport, condition, tafData) {
 
       <div style="border-top: 1px solid #334155; padding-top: 8px;">
         <div style="font-weight: bold; font-size: 12px; margin-bottom: 6px;">Raw TAF:</div>
-        <pre style="
+        <div style="
           font-size: 10px; 
-          white-space: pre-wrap; 
-          word-break: keep-all; 
-          max-height: 180px; 
+          max-height: 150px; 
           overflow-y: auto;
           background: #1e293b;
           color: #f1f5f9;
-          padding: 6px 6px 6px 18px; 
-          text-indent: -12px;
+          padding: 6px; 
           border-radius: 4px;
           margin: 0;
           font-family: monospace;
-        ">${formattedRawTAF}</pre>
+        ">
+          ${tafLinesHtml}
+        </div>
       </div>
     </div>
   `;
