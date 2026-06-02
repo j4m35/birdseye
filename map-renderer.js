@@ -53,8 +53,6 @@ const MapRenderer = (function() {
     }
   }
 
-  const AIRPORT_CIRCLE_OFFSET = 18;
-
   /**
    * Update or add a marker for an airport.
    * Coordinates are extracted from tafData.lat/lng (from API) rather than hardcoded in airports.json.
@@ -77,14 +75,22 @@ const MapRenderer = (function() {
       delete markers[airport.icao];
     }
 
-    // Create new circle marker with updated color
-    const circleMarker = L.circleMarker(latlng, {
-      radius: AIRPORT_CIRCLE_RADIUS,
-      fillColor: color,
-      fillOpacity: 1,
-      color: color,
-      weight: 2,
-      opacity: 0.5,
+    // Create circle marker with updated color
+    const circleMarker = L.marker(latlng, {
+      icon: L.divIcon({
+        className: 'map-airport-glow-marker',
+        html: `<div style="
+          width: 12px; 
+          height: 12px; 
+          border-radius: 50%; 
+          background-color: ${color};
+          border: 1px solid rgba(255,255,255,0.2);
+          box-shadow: 0 0 8px ${color}80;
+          transform: translate(-1px, -1px);
+        "></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+      }),
       className: 'map-airport-marker'
     }).addTo(map);
 
@@ -243,7 +249,7 @@ function updatePopup(marker, airport, condition, tafData) {
           border-radius: 50%; 
           background-color: ${color};
           border: 1px solid rgba(255,255,255,0.2);
-          box-shadow: 0 0 6px ${color};
+          box-shadow: 0 0 8px ${color}80;
           display:inline-block;
         "></div>
         <span style="font-weight: bold; color: ${color}; font-size: 14px;">
