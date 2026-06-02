@@ -175,8 +175,7 @@ const MapRenderer = (function() {
 
 // Build popup HTML with TAF data
 function updatePopup(marker, airport, condition, tafData) {
-  const color = MapRenderer.getMarkerColor ? 
-    (condition === 'IFR' ? '#EF4444' : condition === 'MVFR' ? '#F59E0B' : '#22C55E') : '';
+  const color = getMarkerColor(condition) 
 
   // Extract the true parsed object properties if they are nested inside a .parsed wrapper
   const parsedData = tafData?.parsed ? tafData.parsed : tafData;
@@ -222,9 +221,9 @@ function updatePopup(marker, airport, condition, tafData) {
   const popupContent = `
     <div style="min-width: 200px;">
       <h3 style="margin: 0 0 4px 0; font-size: 16px;">${airport.name}</h3>
-      <div style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">ICAO: ${airport.icao}</div>
+      <div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px;">ICAO: ${airport.icao}</div>
       
-      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
         <div style="
           width: 12px; 
           height: 12px; 
@@ -239,19 +238,17 @@ function updatePopup(marker, airport, condition, tafData) {
         </span>
       </div>
 
-      ${tafHtml}
-
       <div style="border-top: 1px solid #334155; padding-top: 8px;">
         <div style="font-weight: bold; font-size: 12px; margin-bottom: 6px;">Raw TAF:</div>
         <pre style="
-          font-size: 11px; 
+          font-size: 10px; 
           white-space: pre-wrap; 
           word-break: break-all; 
           max-height: 150px; 
           overflow-y: auto;
           background: #1e293b;
           color: #f1f5f9;
-          padding: 8px;
+          padding: 6px;
           border-radius: 4px;
           margin: 0;
           font-family: monospace;
