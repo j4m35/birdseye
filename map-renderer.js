@@ -226,7 +226,7 @@ function updatePopup(marker, airport, condition, tafData) {
         text-indent: -12px; 
         white-space: pre-wrap; 
         word-break: keep-all;
-        margin-bottom: 4px;
+        margin-bottom: 2px;
       ">${line}</div>
     `;
   }).join('');
