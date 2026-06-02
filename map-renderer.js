@@ -209,9 +209,8 @@ function updatePopup(marker, airport, condition, tafData) {
 
   if(tafData && tafData.raw) {
     // --- Clean up and format the Raw TAF text into structural lines ---
-    // This regex looks for word boundaries matching your keywords.
-    // The (?=...) ensures we find the position right BEFORE the word, so we don't delete it.
-    const lineBreakPattern = /\b(PROB\d{2}\s+TEMPO|TEMPO|INTER|BECMG|FM\d{4,6})\b/gi;
+    // Updated pattern handles standalone PROB30/40, PROB30 TEMPO, BECMG, TEMPO, INTER, and FM groups
+    const lineBreakPattern = /\b(PROB\d{2}(?:\s+TEMPO)?|TEMPO|INTER|BECMG|FM\d{4,6})\b/gi;
     
     // Format the text by replacing those positions with a newline character
     formattedRawTAF = tafData.raw.replace(lineBreakPattern, '\n$1').trim();
@@ -244,12 +243,13 @@ function updatePopup(marker, airport, condition, tafData) {
         <pre style="
           font-size: 10px; 
           white-space: pre-wrap; 
-          word-break: break-all; 
-          max-height: 150px; 
+          word-break: keep-all; 
+          max-height: 180px; 
           overflow-y: auto;
           background: #1e293b;
           color: #f1f5f9;
-          padding: 6px;
+          padding: 6px 6px 6px 18px; 
+          text-indent: -12px;
           border-radius: 4px;
           margin: 0;
           font-family: monospace;
