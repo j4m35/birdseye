@@ -73,8 +73,10 @@ const NotificationManager = (function() {
       requireInteraction: newCondition === 'IFR' // Keep notification open for severe conditions
     };
 
+    // Use standard Notification API directly (main thread context)
     try {
-      NotificationManager.lastNotification = self.registration.showNotification(title, options);
+      const notif = new Notification(title, options);
+      NotificationManager.lastNotification = notif;
       console.log(`Notification sent for ${airport.icao}: ${oldCondition} -> ${newCondition}`);
       
       // Record the notification
@@ -83,15 +85,7 @@ const NotificationManager = (function() {
       return true;
     } catch (e) {
       console.warn('Failed to show notification:', e);
-      // Fallback: use standard Notification API if service worker registration fails
-      try {
-        const notif = new Notification(title, options);
-        StateManager.recordNotification(airport.icao, newCondition);
-        return true;
-      } catch (e2) {
-        console.warn('Fallback notification also failed:', e2);
-        return false;
-      }
+      return false;
     }
   }
 

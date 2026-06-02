@@ -39,18 +39,11 @@ const MapRenderer = (function() {
   }
 
   /**
-   * Get the color hex code for a given condition
+   * Get the color hex code for a given condition.
+   * Delegates to TafParser.getConditionColor() to avoid duplication.
    */
   function getMarkerColor(condition) {
-    switch (condition) {
-      case 'IFR':
-        return '#EF4444'; // Red
-      case 'MVFR':
-        return '#F59E0B'; // Yellow/Amber
-      case 'VFR':
-      default:
-        return '#22C55E'; // Green
-    }
+    return TafParser.getConditionColor(condition);
   }
 
   /**

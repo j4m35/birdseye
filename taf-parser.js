@@ -492,19 +492,10 @@ const TafParser = (function() {
     }
   }
 
-  /**
-   * Check if a state change is a downgrade (triggers notification)
-   */
-  function isDowngrade(oldState, newState) {
-    const levels = { 'IFR': 3, 'MVFR': 2, 'VFR': 1 };
-    return levels[newState] > levels[oldState];
-  }
-
   return {
     parse: parse,
     getConditionColor: getConditionColor,
     getConditionLabel: getConditionLabel,
-    isDowngrade: isDowngrade,
     sha256: sha256
   };
 })();
