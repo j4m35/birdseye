@@ -80,9 +80,9 @@ const MapRenderer = (function() {
       icon: L.divIcon({
         className: 'map-airport-glow-marker',
         html: `<div style="
-          width: 12px; 
-          height: 12px; 
-          border-radius: 50%; 
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
           background-color: ${color};
           border: 1px solid rgba(255,255,255,0.2);
           box-shadow: 0 0 8px ${color}80;
@@ -106,7 +106,7 @@ const MapRenderer = (function() {
           white-space: nowrap;
         ">${airport.icao}</div>`,
         iconSize: [80, 20],
-        iconAnchor: [40, AIRPORT_CIRCLE_OFFSET + 10]
+        iconAnchor: [40, 24]
       }),
       interactive: false
     }).addTo(map);
