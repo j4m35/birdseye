@@ -9,5 +9,12 @@
   { "icao": "RJBB", "name": "Kansai International Airport" },
   { "icao": "RJTT", "name": "Tokyo Haneda International Airport" },
   { "icao": "RJAA", "name": "Narita International Airport" },
-  { "icao": "RJCC", "name": "New Chitose Airport" }
+  { "icao": "YPPH", "name": "Perth Airport" },
+  { "icao": "YPDN", "name": "Darwin International Airport" },
+  { "icao": "YPAD", "name": "Adelaide Airport" },
+  { "icao": "YBBN", "name": "Brisbane Airport" },
+  { "icao": "YSSY", "name": "Sydney Airport" },
+  { "icao": "YMML", "name": "Melbourne Airport" },
+  { "icao": "NZAA", "name": "Auckland Airport" },
+  { "icao": "NZCH", "name": "Christchurch Airport" }
 ]

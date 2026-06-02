@@ -222,16 +222,17 @@ function updatePopup(marker, airport, condition, tafData) {
   const popupContent = `
     <div style="min-width: 200px;">
       <h3 style="margin: 0 0 4px 0; font-size: 16px;">${airport.name}</h3>
-      <div style="font-size: 12px; color: #666; margin-bottom: 8px;">ICAO: ${airport.icao}</div>
+      <div style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">ICAO: ${airport.icao}</div>
       
-      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
         <div style="
-          width: 14px; 
-          height: 14px; 
+          width: 12px; 
+          height: 12px; 
           border-radius: 50%; 
           background-color: ${color};
-          border: 2px solid #fff;
-          box-shadow: 0 0 4px rgba(0,0,0,0.3);
+          border: 1px solid rgba(255,255,255,0.2);
+          box-shadow: 0 0 6px ${color};
+          display:inline-block;
         "></div>
         <span style="font-weight: bold; color: ${color}; font-size: 14px;">
           ${condition === 'IFR' ? 'IFR / Severe Weather' : condition === 'MVFR' ? 'MVFR' : 'VFR'}
@@ -240,17 +241,17 @@ function updatePopup(marker, airport, condition, tafData) {
 
       ${tafHtml}
 
-      <div style="border-top: 1px solid #334155; padding-top: 6px;">
-        <div style="font-weight: bold; font-size: 12px; margin-bottom: 4px;">Raw TAF:</div>
+      <div style="border-top: 1px solid #334155; padding-top: 8px;">
+        <div style="font-weight: bold; font-size: 12px; margin-bottom: 6px;">Raw TAF:</div>
         <pre style="
-          font-size: 10px; 
+          font-size: 11px; 
           white-space: pre-wrap; 
           word-break: break-all; 
           max-height: 150px; 
           overflow-y: auto;
           background: #1e293b;
           color: #f1f5f9;
-          padding: 6px;
+          padding: 8px;
           border-radius: 4px;
           margin: 0;
           font-family: monospace;
