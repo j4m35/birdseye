@@ -169,13 +169,14 @@ const MapRenderer = (function() {
     clearMarkers: clearMarkers,
     fitToMarkers: fitToMarkers,
     getMap: function() { return map; },
-    setAirports: setAirports
+    setAirports: setAirports,
+    getMarkerColor: getMarkerColor
   };
 })();
 
 // Build popup HTML with TAF data
 function updatePopup(marker, airport, condition, tafData) {
-  const color = getMarkerColor(condition) 
+  const color = MapRenderer.getMarkerColor(condition) 
 
   // Extract the true parsed object properties if they are nested inside a .parsed wrapper
   const parsedData = tafData?.parsed ? tafData.parsed : tafData;
