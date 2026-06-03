@@ -211,8 +211,10 @@ function updatePopup(marker, airport, condition, tafData) {
     // Updated pattern handles standalone PROB30/40, PROB30 TEMPO, BECMG, TEMPO, INTER, and FM groups
     const lineBreakPattern = /\b(PROB\d{2}(?:\s+TEMPO)?|TEMPO|INTER|BECMG|FM\d{4,6})\b/gi;
     
-    // Format the text by replacing those positions with a newline character
-    formattedRawTAF = tafData.raw.replace(lineBreakPattern, '\n$1').trim();
+    formattedRawTAF = tafData.raw
+      .replace(lineBreakPattern, '\n$1') // Step 1: Add newlines
+      .replace(/-/g, '&#8209;')          // Step 2: Swap to non-breaking hyphens
+      .trim();                           // Step 3: Clean up outer spaces
   } else {
     formattedRawTAF = 'No TAF data available';
   }
