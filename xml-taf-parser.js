@@ -312,11 +312,13 @@ const XMLElementTafParser = (function() {
       // Track main condition and temporary conditions
       if (groupType === 'TEMPORARY') {
         hasTemporaryConditions = true;
-        tempSeverity = condition;
-      } else if (groupType === 'MAIN' || groupType === 'FROM') {
-        if (mainCondition === 'VFR' || isWorseCondition(condition, mainCondition)) {
-          mainCondition = condition;
+        if (!tempSeverity || isWorseCondition(condition, tempSeverity)) {
+          tempSeverity = condition;
         }
+      }
+
+      if (isWorseCondition(condition, mainCondition)) {
+        mainCondition = condition;
       }
     }
 
