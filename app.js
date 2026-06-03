@@ -130,23 +130,12 @@ const APP = (function() {
   }
 
   /**
-   * Compute checksum and evaluate conditions for each airport.
+   * Evaluate conditions for each airport.
    * tafPairs is now: { [icao]: { raw: '...', lat: number, lng: number } }
    */
   async function processTafData(tafPairs) {
     const processed = {};
-    let overallChecksum = '';
-
-    // Combine all TAF data for checksum (only entries with actual TAF text)
     const sortedIcaos = Object.keys(tafPairs).sort();
-    const combinedData = sortedIcaos
-      .filter(icao => tafPairs[icao].raw)
-      .map(icao => `${icao}:${tafPairs[icao].raw}`)
-      .join('|');
-    
-    if (combinedData) {
-      overallChecksum = await TafParser.sha256(combinedData);
-    }
 
     for (const icao of sortedIcaos) {
       const tafData = tafPairs[icao];
@@ -171,7 +160,7 @@ const APP = (function() {
       console.log(`${icao}: ${condition} (${color}) at (${tafData.lat}, ${tafData.lng})`);
     }
 
-    return { processed, checksum: overallChecksum };
+    return { processed };
   }
 
   /**
@@ -214,16 +203,13 @@ const APP = (function() {
    * Save all state to localStorage.
    * Includes lat/lng coordinates extracted from the API response for each airport.
    */
-  function saveState(checksum, processed) {
-    StateManager.saveChecksum(checksum);
-    
+  function saveState(processed) {
     const states = {};
     for (const icao in processed) {
       states[icao] = {
         condition: processed[icao].condition,
         lat: processed[icao].lat,
         lng: processed[icao].lng,
-        checksum: null, // Individual checksums not stored per airport
         timestamp: new Date().toISOString(),
         rawData: processed[icao].raw
       };
@@ -297,7 +283,7 @@ const APP = (function() {
     }
 
     // Process and evaluate
-    const { processed, checksum } = await processTafData(tafPairs);
+    const { processed } = await processTafData(tafPairs);
     
     if (Object.keys(processed).length === 0) {
       return { success: false, error: 'Could not parse any TAF data' };
@@ -310,7 +296,7 @@ const APP = (function() {
     updateMapMarkers(processed);
 
     // Save state
-    saveState(checksum, processed);
+    saveState(processed);
 
     console.log(`Fetch complete at ${new Date().toLocaleTimeString()}`);
     

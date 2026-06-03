@@ -1,41 +1,16 @@
 /**
  * State Manager Module
- * 
+ *
  * Handles localStorage persistence of fetched TAF data and airport states.
- * Uses SHA-256 checksums to efficiently detect changes between fetches.
  */
 
 const StateManager = (function() {
   'use strict';
 
   const STORAGE_KEY_PREFIX = 'birdseye_';
-  const CHECKSUM_KEY = STORAGE_KEY_PREFIX + 'checksum';
   const TIMESTAMP_KEY = STORAGE_KEY_PREFIX + 'lastFetch';
   const AIRPORT_STATES_KEY = STORAGE_KEY_PREFIX + 'airportStates';
   const NOTIFICATION_STATE_KEY = STORAGE_KEY_PREFIX + 'notificationState';
-
-  /**
-   * Save the checksum and raw TAF data for all airports
-   */
-  function saveChecksum(checksum) {
-    try {
-      localStorage.setItem(CHECKSUM_KEY, checksum);
-      localStorage.setItem(TIMESTAMP_KEY, new Date().toISOString());
-    } catch (e) {
-      console.warn('Failed to save checksum:', e);
-    }
-  }
-
-  /**
-   * Get the previously stored checksum
-   */
-  function getChecksum() {
-    try {
-      return localStorage.getItem(CHECKSUM_KEY);
-    } catch (e) {
-      return null;
-    }
-  }
 
   /**
    * Get the timestamp of the last fetch
@@ -77,7 +52,7 @@ const StateManager = (function() {
   /**
    * Save the state of a single airport.
    * @param {string} icao - ICAO code
-   * @param {Object} state - { condition: string, lat?: number, lng?: number, checksum?: string, timestamp?: string, rawData?: string }
+   * @param {Object} state - { condition: string, lat?: number, lng?: number, timestamp?: string, rawData?: string }
    */
   function saveAirportState(icao, state) {
     const states = getAirportStates();
@@ -86,7 +61,6 @@ const StateManager = (function() {
         condition: state.condition,
         lat: state.lat ?? null,
         lng: state.lng ?? null,
-        checksum: state.checksum || null,
         timestamp: new Date().toISOString(),
         rawData: state.rawData || null
       };
@@ -195,7 +169,6 @@ const StateManager = (function() {
    */
   function clearAll() {
     try {
-      localStorage.removeItem(CHECKSUM_KEY);
       localStorage.removeItem(TIMESTAMP_KEY);
       localStorage.removeItem(AIRPORT_STATES_KEY);
       localStorage.removeItem(NOTIFICATION_STATE_KEY);
@@ -209,7 +182,6 @@ const StateManager = (function() {
    */
   function getFullState() {
     return {
-      checksum: getChecksum(),
       lastFetchTime: getLastFetchTime(),
       airportStates: getAirportStates(),
       notificationState: getNotificationState()
@@ -217,8 +189,6 @@ const StateManager = (function() {
   }
 
   return {
-    saveChecksum: saveChecksum,
-    getChecksum: getChecksum,
     getLastFetchTime: getLastFetchTime,
     saveAirportStates: saveAirportStates,
     getAirportStates: getAirportStates,
