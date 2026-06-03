@@ -43,7 +43,8 @@ const APP = (function() {
   }
 
   /**
-   * Fetch TAF data for a list of ICAO airports via CORS proxy
+   * Fetch TAF data for a list of ICAO airports via CORS proxy.
+   * Returns the raw XML text and a list of ICAO codes for parsing.
    */
   async function fetchTafData(icaoCodes) {
     const ids = icaoCodes.join(',');
@@ -54,7 +55,7 @@ const APP = (function() {
       if (!response.ok) throw new Error(`API returned ${response.status}`);
       
       const text = await response.text();
-      return parseXmlToTafPairs(text, icaoCodes);
+      return { xmlText: text, icaoCodes: icaoCodes };
     } catch (error) {
       console.error(`Fetch error for ${ids}:`, error);
       return null;
@@ -62,11 +63,10 @@ const APP = (function() {
   }
 
   /**
-   * Parse XML response from aviationweather.gov into TAF pairs by ICAO,
-   * also extracting lat/lng from the XML to avoid hardcoding coordinates.
-   * Returns: { [icao]: { raw: '...', lat: number, lng: number } }
+   * Parse and evaluate TAF data from XML response.
+   * Uses XMLElementTafParser to process structured XML data instead of raw TAF text.
    */
-  function parseXmlToTafPairs(xmlText, icaoCodes) {
+  function parseXmlForAirports(xmlText, icaoCodes) {
     const results = {};
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
@@ -74,11 +74,11 @@ const APP = (function() {
     // Check for parsing errors
     const parseError = xmlDoc.querySelector('parsererror');
     if (parseError) {
-      console.error('XML parse error:', parseError.textContent);
+      console.error('[APP] XML parse error:', parseError.textContent);
       return results;
     }
 
-    // Find all TAF elements
+    // Extract each TAF block and parse with XMLElementTafParser
     const tafElements = xmlDoc.getElementsByTagName('TAF');
     
     for (let i = 0; i < tafElements.length; i++) {
@@ -88,41 +88,31 @@ const APP = (function() {
       
       if (!stationId) continue;
 
-      // Extract raw TAF text
-      const rawTafEl = tafEl.getElementsByTagName('raw_text')[0];
-      let rawTaf = '';
-      if (rawTafEl && rawTafEl.firstChild) {
-        rawTaf = rawTafEl.firstChild.nodeValue.trim();
-      }
-
-      // Extract coordinates from XML (more reliable than hardcoded values)
+      // Extract coordinates from XML
       const latEl = tafEl.getElementsByTagName('latitude')[0];
       const lngEl = tafEl.getElementsByTagName('longitude')[0];
       const lat = latEl && latEl.firstChild ? parseFloat(latEl.firstChild.nodeValue) : null;
       const lng = lngEl && lngEl.firstChild ? parseFloat(lngEl.firstChild.nodeValue) : null;
 
-      if (rawTaf) {
-        results[stationId] = {
-          raw: rawTaf,
-          lat: lat,
-          lng: lng
-        };
-      } else if (lat !== null && lng !== null) {
-        // Store coordinates even without TAF data for marker placement
-        results[stationId] = {
-          raw: '',
-          lat: lat,
-          lng: lng
-        };
+      // Parse the TAF element using XMLElementTafParser
+      const parsed = XMLElementTafParser.parse(tafEl);
+      
+      if (!parsed) {
+        console.warn(`[APP] Could not parse TAF for ${stationId}`);
+        continue;
       }
+
+      results[stationId] = {
+        ...parsed,
+        lat: lat,
+        lng: lng
+      };
     }
 
     // Log any airports that didn't return data
     icaoCodes.forEach(icao => {
       if (!results[icao]) {
-        console.warn(`No TAF data found for ${icao}`);
-      } else if (results[icao].lat === null || results[icao].lng === null) {
-        console.warn(`No coordinates found for ${icao} in API response`);
+        console.warn(`[APP] No TAF data found for ${icao}`);
       }
     });
 
@@ -131,28 +121,27 @@ const APP = (function() {
 
   /**
    * Evaluate conditions for each airport.
-   * tafPairs is now: { [icao]: { raw: '...', lat: number, lng: number } }
+   * parsedTafData is now: { [icao]: { mainCondition, groups, hasTemporaryConditions, tempSeverity, raw, lat, lng, ... } }
    */
-  async function processTafData(tafPairs) {
+  async function processTafData(parsedTafData) {
     const processed = {};
-    const sortedIcaos = Object.keys(tafPairs).sort();
+    const sortedIcaos = Object.keys(parsedTafData).sort();
 
     for (const icao of sortedIcaos) {
-      const tafData = tafPairs[icao];
-      if (!tafData || !tafData.raw) continue;
+      const tafData = parsedTafData[icao];
+      if (!tafData || !tafData.mainCondition) continue;
 
-      // Parse TAF
-      const parsed = TafParser.parse(tafData.raw);
-      if (!parsed) continue;
-
-      const condition = parsed.mainCondition;
-      const color = TafParser.getConditionColor(condition);
+      const condition = tafData.mainCondition;
+      const color = XMLElementTafParser.getConditionColor(condition);
 
       processed[icao] = {
         condition: condition,
         color: color,
-        parsed: parsed,
+        parsed: tafData,
         raw: tafData.raw,
+        stationId: tafData.stationId,
+        validFrom: tafData.validFrom,
+        validTo: tafData.validTo,
         lat: tafData.lat,
         lng: tafData.lng
       };
@@ -276,17 +265,24 @@ const APP = (function() {
 
     const icaoCodes = airports.map(a => a.icao);
     
-    // Fetch raw TAF data
-    const tafPairs = await fetchTafData(icaoCodes);
-    if (!tafPairs || Object.keys(tafPairs).length === 0) {
+    // Fetch XML TAF data from CORS proxy
+    const fetchResult = await fetchTafData(icaoCodes);
+    if (!fetchResult || !fetchResult.xmlText) {
       return { success: false, error: 'No TAF data received' };
     }
 
-    // Process and evaluate
-    const { processed } = await processTafData(tafPairs);
+    // Parse XML and evaluate conditions using XMLElementTafParser
+    const parsedTafData = parseXmlForAirports(fetchResult.xmlText, icaoCodes);
+    
+    if (Object.keys(parsedTafData).length === 0) {
+      return { success: false, error: 'Could not parse any TAF data from XML' };
+    }
+
+    // Process and prepare for map/display
+    const { processed } = await processTafData(parsedTafData);
     
     if (Object.keys(processed).length === 0) {
-      return { success: false, error: 'Could not parse any TAF data' };
+      return { success: false, error: 'Could not evaluate any TAF conditions' };
     }
 
     // Check for state changes and notify

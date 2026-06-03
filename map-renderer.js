@@ -40,10 +40,10 @@ const MapRenderer = (function() {
 
   /**
    * Get the color hex code for a given condition.
-   * Delegates to TafParser.getConditionColor() to avoid duplication.
+   * Delegates to XMLElementTafParser.getConditionColor() to avoid duplication.
    */
   function getMarkerColor(condition) {
-    return TafParser.getConditionColor(condition);
+    return XMLElementTafParser.getConditionColor(condition);
   }
 
   /**
