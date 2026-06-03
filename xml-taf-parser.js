@@ -376,4 +376,4 @@ const XMLElementTafParser = (function() {
     getConditionColor: getConditionColor,
     getConditionLabel: getConditionLabel
   };
-});
+})();
