@@ -121,7 +121,7 @@ const TafParser = (function() {
     let match;
 
     while ((match = cloudPatterns.exec(tafSection)) !== null) {
-      const coverage = match[1] ? match[0].substring(0, 3) : match[0].substring(0, 3);
+      const coverage = match[0].substring(0, 3);
       const altitude = parseInt(match[1]) * 100; // Altitude in hundreds of feet
 
       layers.push({
@@ -164,28 +164,6 @@ const TafParser = (function() {
   }
 
   /**
-   * Split TAF into main forecast + RMG section
-   */
-  function splitTafSections(rawTaf) {
-    // Check for TEMPO and GROUP (FM/BECGRP/TEMPO/FM) sections
-    const tempoMatches = rawTaf.match(/(TEMPO\b[\s\S]*?)(?=BECGRP|FM\d{4}|RMK|$)/gi);
-    const tempoGroups = tempoMatches ? tempoMatches.map(m => m.trim()) : [];
-
-    // Check for PROB (probability groups)
-    const probPattern = /(PROB\d{2})\s+([\s\S]*?)(?=(?:TEMPO|PROB|FM|BECGRP|BECMG|RMK)|$)/gi;
-    const probGroups = [];
-    let probMatch;
-    while ((probMatch = probPattern.exec(rawTaf)) !== null) {
-      probGroups.push({
-        probability: parseInt(probMatch[1].replace('PROB', '')),
-        conditions: probMatch[2].trim()
-      });
-    }
-
-    return { tempoGroups, probGroups };
-  }
-
-  /**
    * Determine the overall condition of a TAF section
    * Dynamically uses the module's SEVERE_WEATHER and DEGRADING_WEATHER lists!
    */
@@ -221,20 +199,21 @@ const TafParser = (function() {
 
     // --- 4. Check ceiling (< 1000ft = IFR, < 3000ft = MVFR) ---
     if (clouds && clouds.length > 0) {
-      const lowestCeiling = clouds.reduce((min, layer) => {
-        const coverages = ['OVC', 'BKN', 'SCT', 'FEW'];
-        const idx = coverages.indexOf(layer.coverage);
-        return idx >= 0 ? layer : null;
-      }, null);
+      // Find the lowest ceiling layer (BKN or OVC with smallest altitude)
+      let lowestCeiling = null;
+      for (const layer of clouds) {
+        if (layer.coverage === 'BKN' || layer.coverage === 'OVC') {
+          if (!lowestCeiling || layer.altitude < lowestCeiling.altitude) {
+            lowestCeiling = layer;
+          }
+        }
+      }
 
       if (lowestCeiling) {
         if (lowestCeiling.altitude < 1000) {
           severity = 'IFR'; // RED - very low ceiling
-        } else if (lowestCeiling.altitude < 3000 && 
-                   (lowestCeiling.coverage === 'BKN' || lowestCeiling.coverage === 'OVC')) {
-          if (severity !== 'IFR') {
-            severity = 'MVFR'; // YELLOW - broken/overcast low ceiling
-          }
+        } else if (lowestCeiling.altitude < 3000 && severity !== 'IFR') {
+          severity = 'MVFR'; // YELLOW - broken/overcast low ceiling
         }
       }
     }
