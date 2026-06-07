@@ -208,19 +208,21 @@ function updatePopup(marker, airport, condition, tafData) {
 
   if(tafData && tafData.raw) {
     // --- Clean up and format the Raw TAF text into structural lines ---
-    // Updated pattern handles standalone PROB30/40, PROB30 TEMPO, BECMG, TEMPO, INTER, and FM groups
-    const lineBreakPattern = /\b(PROB\d{2}(?:\s+TEMPO)?|TEMPO|INTER|BECMG|FM\d{4,6})\b/gi;
+    // Updated pattern handles standalone PROB30/40, PROB30/40 TEMPO, PROB30/40 INTER, BECMG, TEMPO, INTER, and FM groups
+    const lineBreakPattern = /\b(PROB\d{2}(?:\s+(?:TEMPO|INTER))?|TEMPO|INTER|BECMG|FM\d{4,6})\b/gi;
     
-    formattedRawTAF = tafData.raw
-      .replace(lineBreakPattern, '\n$1') // Step 1: Add newlines
-      .replace(/-/g, '&#8209;')          // Step 2: Swap to non-breaking hyphens
-      .trim();                           // Step 3: Clean up outer spaces
+    // Add newlines & clean up outer spaces
+    formattedRawTAF = tafData.raw.replace(lineBreakPattern, '\n$1').trim();
   } else {
     formattedRawTAF = 'No TAF data available';
   }
 
   // Split the formatted TAF into an array of lines, then map each line to a distinct div block
   const tafLinesHtml = formattedRawTAF.split('\n').map(line => {
+    // This regex finds any block of text starting with - or + (e.g., -SHRA)
+    // and wraps it in a span that forbids line-breaking.
+    const protectedLine = line.replace(/([+-][A-Z]+)/g, '<span style="white-space: nowrap;">$1</span>');
+
     return `
       <div style="
         padding-left: 12px; 
@@ -228,7 +230,7 @@ function updatePopup(marker, airport, condition, tafData) {
         white-space: pre-wrap; 
         word-break: keep-all;
         margin-bottom: 2px;
-      ">${line}</div>
+      ">${protectedLine}</div>
     `;
   }).join('');
 
