@@ -85,7 +85,7 @@ const XMLElementTafParser = (function() {
     // 3. Visibility check
     if (visibility) {
       if (visibility.value < 1500) {
-        severity = 'IFR';
+        return 'IFR';
       } else if (visibility.value < 5000 && severity !== 'IFR') {
         severity = 'MVFR';
       }
@@ -104,7 +104,7 @@ const XMLElementTafParser = (function() {
 
       if (lowestCeiling) {
         if (lowestCeiling.altitude < 1000) {
-          severity = 'IFR';
+          return 'IFR';
         } else if (lowestCeiling.altitude < 3000 && severity !== 'IFR') {
           severity = 'MVFR';
         }
@@ -116,8 +116,7 @@ const XMLElementTafParser = (function() {
       for (const wx of allWeather) {
         const isDegrading = DEGRADING_WEATHER.some(regex => regex.test(wx.phenomenon));
         if (isDegrading) {
-          severity = 'MVFR';
-          break;
+          return 'MVFR';
         }
       }
     }

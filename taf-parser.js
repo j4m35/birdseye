@@ -177,21 +177,20 @@ const TafParser = (function() {
       const isSevere = SEVERE_WEATHER.some(regex => regex.test(wx.phenomenon));
 
       if (isSevere) {
-        console.log(`[Parser Sync] Severe weather phenomenon detected (${wx.phenomenon}). Forcing IFR.`);
+        // console.log(`[Parser Sync] Severe weather phenomenon detected (${wx.phenomenon}). Forcing IFR.`);
         return 'IFR'; // Instant Red Override
       }
     }
 
     // --- 2. Check for high wind speeds (> 25 knots) ---
     if (wind && (wind.speedKnots > 25 || (wind.gustKnots && wind.gustKnots > 25))) {
-      severity = 'IFR'; // RED
-      return severity;
+      return 'IFR'; // RED
     }
 
     // --- 3. Check visibility (< 5000m = MVFR, < 1500m = IFR) ---
     if (visibility) {
       if (visibility.value < 1500) {
-        severity = 'IFR'; // RED - very low visibility
+        return 'IFR'; // RED - very low visibility
       } else if (visibility.value < 5000) {
         severity = 'MVFR'; // YELLOW - moderate visibility
       }
@@ -211,7 +210,7 @@ const TafParser = (function() {
 
       if (lowestCeiling) {
         if (lowestCeiling.altitude < 1000) {
-          severity = 'IFR'; // RED - very low ceiling
+          return 'IFR'; // RED - very low ceiling
         } else if (lowestCeiling.altitude < 3000 && severity !== 'IFR') {
           severity = 'MVFR'; // YELLOW - broken/overcast low ceiling
         }
@@ -222,14 +221,9 @@ const TafParser = (function() {
     // If it didn't trigger IFR via visibility or ceiling, check for degrading criteria (like normal rain/mist)
     if (severity === 'VFR') {
       for (const wx of allWeather) {
-        const isDegrading = DEGRADING_WEATHER.some(regex => {
-          regex.lastIndex = 0;
-          return regex.test(wx.phenomenon);
-        });
-        
+        const isDegrading = DEGRADING_WEATHER.some(regex => regex.test(wx.phenomenon));
         if (isDegrading) {
-          severity = 'MVFR'; // Bump up to Amber/Yellow
-          break;
+          return 'MVFR';
         }
       }
     }
