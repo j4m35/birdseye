@@ -9,34 +9,33 @@
  *   const parsed = XMLElementTafParser.parse(xmlData);
  */
 
+// Compiled regex patterns (defined at module scope so they're created once, not per evaluateConditions call)
+const SEVERE_WEATHER = [
+  /TS/,    // Thunderstorm (TS, TSRA, +TSRA, -TSRA, TSGR, etc.)
+  /SQ/,          // Squall
+  /FZRA/,        // Freezing rain
+  /TL(?=\s|$)/,  // Tornado
+  /DS/,          // Dust storm
+  /SS/,          // Sandstorm
+];
+
+const DEGRADING_WEATHER = [
+  /RA/,          // Rain
+  /DZ/,          // Drizzle
+  /SN/,          // Snow
+  /SG/,          // Snow grains
+  /PL/,          // Ice pellets
+  /GR/,          // Hail
+  /GS/,          // Small hail
+  /BR/,          // Mist
+  /FG/,          // Fog
+  /HZ/,          // Haze
+  /PO/,          // Dust/sand whirls
+  /FC/,          // Funnel cloud/tornado
+];
+
 const XMLElementTafParser = (function() {
   'use strict';
-
-  // Severe weather phenomena patterns (same as taf-parser.js)
-  const SEVERE_WEATHER = [
-    /TS/,    // Thunderstorm (TS, TSRA, +TSRA, -TSRA, TSGR, etc.)
-    /SQ/,          // Squall
-    /FZRA/,        // Freezing rain
-    /TL(?=\s|$)/,  // Tornado
-    /DS/,          // Dust storm
-    /SS/,          // Sandstorm
-  ];
-
-  // Degrading condition patterns (same as taf-parser.js)
-  const DEGRADING_WEATHER = [
-    /RA/,          // Rain
-    /DZ/,          // Drizzle
-    /SN/,          // Snow
-    /SG/,          // Snow grains
-    /PL/,          // Ice pellets
-    /GR/,          // Hail
-    /GS/,          // Small hail
-    /BR/,          // Mist
-    /FG/,          // Fog
-    /HZ/,          // Haze
-    /PO/,          // Dust/sand whirls
-    /FC/,          // Funnel cloud/tornado
-  ];
 
   /**
    * Parse visibility string to meters

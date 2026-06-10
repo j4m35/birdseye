@@ -6,34 +6,33 @@
  * and weather phenomena. Returns structured data with color coding.
  */
 
+// Compiled regex patterns (defined at module scope so they're created once, not per evaluateConditions call)
+const SEVERE_WEATHER = [
+  /TS/,    // Thunderstorm (TS, TSRA, +TSRA, -TSRA, TSGR, etc.)
+  /SQ/,          // Squall
+  /FZRA/,        // Freezing rain
+  /TL(?=\s|$)/,  // Tornado (less common in TAF but included)
+  /DS/,          // Dust storm
+  /SS/,          // Sandstorm
+];
+
+const DEGRADING_WEATHER = [
+  /RA/,          // Rain
+  /DZ/,          // Drizzle
+  /SN/,          // Snow
+  /SG/,          // Snow grains
+  /PL/,          // Ice pellets
+  /GR/,          // Hail
+  /GS/,          // Small hail
+  /BR/,          // Mist
+  /FG/,          // Fog
+  /HZ/,          // Haze
+  /PO/,          // Dust/sand whirls
+  /FC/,          // Funnel cloud/tornado
+];
+
 const TafParser = (function() {
   'use strict';
-
-  // Severe weather phenomena patterns
-  const SEVERE_WEATHER = [
-    /TS/,    // Thunderstorm (TS, TSRA, +TSRA, -TSRA, TSGR, etc.)
-    /SQ/,          // Squall
-    /FZRA/,        // Freezing rain
-    /TL(?=\s|$)/,  // Tornado (less common in TAF but included)
-    /DS/,          // Dust storm
-    /SS/,          // Sandstorm
-  ];
-
-  // Degrading condition patterns
-  const DEGRADING_WEATHER = [
-    /RA/,          // Rain
-    /DZ/,          // Drizzle
-    /SN/,          // Snow
-    /SG/,          // Snow grains
-    /PL/,          // Ice pellets
-    /GR/,          // Hail
-    /GS/,          // Small hail
-    /BR/,          // Mist
-    /FG/,          // Fog
-    /HZ/,          // Haze
-    /PO/,          // Dust/sand whirls
-    /FC/,          // Funnel cloud/tornado
-  ];
 
   /**
    * Parse wind component from TAF string
