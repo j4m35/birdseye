@@ -187,6 +187,9 @@ const MapRenderer = (function() {
   // Store airports reference for fitToMarkers
   let airportsCache = [];
 
+  // Cache popup HTML keyed by airport ICAO to avoid rebuilding when raw TAF hasn't changed
+  let popupHtmlCache = {};
+
   function setAirports(airports) {
     airportsCache = airports;
   }
@@ -202,9 +205,19 @@ const MapRenderer = (function() {
   };
 })();
 
-// Build popup HTML with TAF data
+// Build popup HTML with TAF data (cached to avoid rebuilding when raw TAF hasn't changed)
 function updatePopup(marker, airport, condition, tafData) {
-  const color = MapRenderer.getMarkerColor(condition) 
+  const cacheKey = airport.icao;
+
+  if (popupHtmlCache[cacheKey] && popupHtmlCache[cacheKey].raw === tafData.raw) {
+    marker.bindPopup(popupHtmlCache[cacheKey].content, {
+      maxWidth: 300,
+      minWidth: 200
+    });
+    return;
+  }
+
+  const color = MapRenderer.getMarkerColor(condition);
 
   // Extract the true parsed object properties if they are nested inside a .parsed wrapper
   const parsedData = tafData?.parsed ? tafData.parsed : tafData;
@@ -306,6 +319,8 @@ function updatePopup(marker, airport, condition, tafData) {
     maxWidth: 300,
     minWidth: 200
   });
+
+  popupHtmlCache[cacheKey] = { raw: tafData.raw, content: popupContent };
 }
 
 // Add a method to updatePopup to the module
