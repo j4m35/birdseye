@@ -56,10 +56,38 @@ const MapRenderer = (function() {
     }
 
     const color = getMarkerColor(condition);
-    // Use coordinates from API response; fall back to airport lat/lng if available (for cached/initial display)
     const latlng = [tafData?.lat ?? airport.lat, tafData?.lng ?? airport.lng];
-    
-    // Remove existing marker if it exists
+
+    // If marker already exists with no coordinate change, update inline styles only
+    const coordKey = `${tafData?.lat}:${tafData?.lng}`;
+    if (markers[airport.icao] && markers[airport.icao]._coordKey === coordKey) {
+      // Update circle marker color
+      const circleEl = markers[airport.icao].getElement();
+      if (circleEl) {
+        const innerDiv = circleEl.querySelector('div');
+        if (innerDiv) {
+          innerDiv.style.backgroundColor = color;
+          innerDiv.style.boxShadow = `0 0 8px ${color}80`;
+        }
+      }
+
+      // Update label color
+      if (markers[airport.icao].label) {
+        const labelTextEl = markers[airport.icao].label.getElement();
+        if (labelTextEl) {
+          const innerLabelDiv = labelTextEl.querySelector('div');
+          if (innerLabelDiv) {
+            innerLabelDiv.style.color = color;
+          }
+        }
+      }
+
+      // Always update popup content since TAF data may have changed
+      updatePopup(markers[airport.icao], airport, condition, tafData);
+      return;
+    }
+
+    // Remove existing marker if it exists (coordinates changed or first create)
     if (markers[airport.icao]) {
       map.removeLayer(markers[airport.icao]);
       if (markers[airport.icao].label) {
@@ -106,6 +134,7 @@ const MapRenderer = (function() {
 
     circleMarker.label = label;
     markers[airport.icao] = circleMarker;
+    circleMarker._coordKey = coordKey;
 
     // Set popup content
     updatePopup(circleMarker, airport, condition, tafData);

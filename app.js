@@ -20,7 +20,11 @@ const APP = (function() {
 
   // State tracking
   let airports = [];
+  const airportByIcao = new Map();
   let previousConditions = {}; // { icao: 'VFR' | 'MVFR' | 'IFR' }
+
+  // Cached DOM element references for hot paths
+  let cachedStatusText, cachedCountdownText, cachedNotifBtn;
 
   /**
    * Load airport definitions from JSON file
@@ -29,8 +33,12 @@ const APP = (function() {
     try {
       const response = await fetch('./airports.json');
       if (!response.ok) throw new Error(`Failed to load airports: ${response.status}`);
-      
+    
       airports = await response.json();
+      airportByIcao.clear();
+      for (const a of airports) {
+        airportByIcao.set(a.icao, a);
+      }
       console.log(`Loaded ${airports.length} airports:`);
       airports.forEach(a => console.log(`  - ${a.icao}: ${a.name}`));
       
@@ -164,7 +172,7 @@ const APP = (function() {
       if (oldState && oldState !== newState) {
         // Check if downgrade and should notify
         if (NotificationManager.shouldNotify(icao, oldState, newState)) {
-          const airport = airports.find(a => a.icao === icao);
+          const airport = airportByIcao.get(icao);
           if (airport) {
             NotificationManager.sendDowngradeNotification(airport, oldState, newState);
           }
@@ -181,7 +189,7 @@ const APP = (function() {
    */
   function updateMapMarkers(processed) {
     for (const icao in processed) {
-      const airport = airports.find(a => a.icao === icao);
+      const airport = airportByIcao.get(icao);
       if (!airport) continue;
 
       MapRenderer.updateMarker(airport, processed[icao].condition, processed[icao]);
@@ -231,10 +239,8 @@ const APP = (function() {
    * Update status bar UI
    */
   function updateStatus(status, message) {
-    const statusText = document.getElementById('status-text');
-    const countdownText = document.getElementById('countdown-text');
-    
-    if (!statusText) return;
+    const el = cachedStatusText;
+    if (!el) return;
     
     let html = '';
     
@@ -252,7 +258,7 @@ const APP = (function() {
         html = `<span class="status-indicator"></span>${message || 'Ready'}`;
     }
     
-    statusText.innerHTML = html;
+    el.innerHTML = html;
   }
 
   /**
@@ -308,6 +314,11 @@ const APP = (function() {
     // Load airports first
     await loadAirports();
     
+    // Cache DOM element references for hot paths
+    cachedStatusText = document.getElementById('status-text');
+    cachedCountdownText = document.getElementById('countdown-text');
+    cachedNotifBtn = document.getElementById('btn-notifications');
+
     if (airports.length === 0) {
       updateStatus('error', 'No airports configured');
       return;
@@ -322,7 +333,7 @@ const APP = (function() {
 
     // Display cached markers with coordinates from localStorage
     for (const icao in cachedStates) {
-      const airport = airports.find(a => a.icao === icao);
+      const airport = airportByIcao.get(icao);
       if (airport && cachedStates[icao].condition) {
         MapRenderer.updateMarker(airport, cachedStates[icao].condition, cachedStates[icao]);
       }
@@ -402,7 +413,7 @@ const APP = (function() {
    * Update notification button appearance based on state
    */
   function updateNotificationButton() {
-    const btn = document.getElementById('btn-notifications');
+    const btn = cachedNotifBtn;
     if (!btn) return;
 
     const permission = NotificationManager.getPermission();
