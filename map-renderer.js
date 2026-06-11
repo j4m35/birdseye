@@ -9,7 +9,10 @@ const MapRenderer = (function() {
   'use strict';
 
   let map = null;
-  let markers = {}; //icao -> circleMarker/LatLngPopup
+  let markers = {};        //icao -> circleMarker/LatLngPopup
+  let airportsCache = [];  // Store airports reference for fitToMarkers
+  let popupHtmlCache = {}; // Cache popup HTML keyed by airport ICAO to avoid rebuilding when raw TAF hasn't changed
+
   const AIRPORT_CIRCLE_RADIUS = 8;
   const AIRPORT_LABEL_OFFSET = 12;
 
@@ -184,14 +187,126 @@ const MapRenderer = (function() {
     }
   }
 
-  // Store airports reference for fitToMarkers
-  let airportsCache = [];
-
-  // Cache popup HTML keyed by airport ICAO to avoid rebuilding when raw TAF hasn't changed
-  let popupHtmlCache = {};
-
   function setAirports(airports) {
     airportsCache = airports;
+  }
+
+  // Build popup HTML with TAF data (cached to avoid rebuilding when raw TAF hasn't changed)
+  function updatePopup(marker, airport, condition, tafData) {
+    const cacheKey = airport.icao;
+
+    if (popupHtmlCache[cacheKey] && popupHtmlCache[cacheKey].raw === tafData.raw) {
+      marker.bindPopup(popupHtmlCache[cacheKey].content, {
+        maxWidth: 300,
+        minWidth: 200
+      });
+      return;
+    }
+
+    const color = MapRenderer.getMarkerColor(condition);
+
+    // Extract the true parsed object properties if they are nested inside a .parsed wrapper
+    const parsedData = tafData?.parsed ? tafData.parsed : tafData;
+
+    // Format TAF data for display - show the parsed info nicely
+    let tafHtml = '';
+    
+    if (parsedData && typeof parsedData === 'object') {
+      // Read from either parsedData or the top-level tafData as a fallback
+      const mainCond = parsedData.mainCondition || parsedData.condition || condition;
+      const groups = parsedData.groups || [];
+      const hasTemp = parsedData.hasTemporaryConditions || false;
+      const tempSev = parsedData.tempSeverity || 'N/A';
+
+      tafHtml = `
+        <div style="margin-top: 8px; font-size: 12px;">
+          <div><strong>Condition:</strong> <span style="color: ${color}; font-weight: bold;">${mainCond}</span></div>
+          ${hasTemp ? `<div><strong>Temporary Conditions:</strong> Yes (Severity: ${tempSev})</div>` : ''}
+          ${groups.length > 0 ? `
+            <div style="margin-top: 6px;"><strong>Forecast Periods:</strong></div>
+            <ul style="margin: 4px 0; padding-left: 16px;">
+              ${groups.map(g => `<li>${g.type}: ${g.condition}</li>`).join('')}
+            </ul>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    let formattedRawTAF = ''
+
+    if(tafData && tafData.raw) {
+      // --- Clean up and format the Raw TAF text into structural lines ---
+      // Updated pattern handles standalone PROB30/40, PROB30/40 TEMPO, PROB30/40 INTER, BECMG, TEMPO, INTER, and FM groups
+      const lineBreakPattern = /\b(PROB\d{2}(?:\s+(?:TEMPO|INTER))?|TEMPO|INTER|BECMG|FM\d{4,6})\b/gi;
+      
+      // Add newlines & clean up outer spaces
+      formattedRawTAF = tafData.raw.replace(lineBreakPattern, '\n$1').trim();
+    } else {
+      formattedRawTAF = 'No TAF data available';
+    }
+
+    // Split the formatted TAF into an array of lines, then map each line to a distinct div block
+    const tafLinesHtml = formattedRawTAF.split('\n').map(line => {
+      // This regex finds any block of text starting with - or + (e.g., -SHRA)
+      // and wraps it in a span that forbids line-breaking.
+      const protectedLine = line.replace(/([+-][A-Z]+)/g, '<span style="white-space: nowrap;">$1</span>');
+
+      return `
+        <div style="
+          padding-left: 12px; 
+          text-indent: -12px; 
+          white-space: pre-wrap; 
+          word-break: keep-all;
+          margin-bottom: 2px;
+        ">${protectedLine}</div>
+      `;
+    }).join('');
+
+    const popupContent = `
+      <div style="min-width: 200px;">
+        <h3 style="margin: 0 0 4px 0; font-size: 16px;">${airport.name}</h3>
+        <div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px;">ICAO: ${airport.icao}</div>
+        
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <div style="
+            width: 12px; 
+            height: 12px; 
+            border-radius: 50%; 
+            background-color: ${color};
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 0 8px ${color}80;
+            display:inline-block;
+          "></div>
+          <span style="font-weight: bold; color: ${color}; font-size: 14px;">
+            ${condition === 'IFR' ? 'IFR / Severe Weather' : condition === 'MVFR' ? 'MVFR' : 'VFR'}
+          </span>
+        </div>
+
+        <div style="border-top: 1px solid #334155; padding-top: 8px;">
+          <div style="font-weight: bold; font-size: 12px; margin-bottom: 6px;">Raw TAF:</div>
+          <div style="
+            font-size: 10px; 
+            max-height: 150px; 
+            overflow-y: auto;
+            background: #1e293b;
+            color: #f1f5f9;
+            padding: 6px; 
+            border-radius: 4px;
+            margin: 0;
+            font-family: monospace;
+          ">
+            ${tafLinesHtml}
+          </div>
+        </div>
+      </div>
+    `;
+
+    marker.bindPopup(popupContent, {
+      maxWidth: 300,
+      minWidth: 200
+    });
+
+    popupHtmlCache[cacheKey] = { raw: tafData.raw, content: popupContent };
   }
 
   return {
@@ -201,127 +316,7 @@ const MapRenderer = (function() {
     fitToMarkers: fitToMarkers,
     getMap: function() { return map; },
     setAirports: setAirports,
-    getMarkerColor: getMarkerColor
+    getMarkerColor: getMarkerColor,
+    updatePopup: updatePopup
   };
 })();
-
-// Build popup HTML with TAF data (cached to avoid rebuilding when raw TAF hasn't changed)
-function updatePopup(marker, airport, condition, tafData) {
-  const cacheKey = airport.icao;
-
-  if (popupHtmlCache[cacheKey] && popupHtmlCache[cacheKey].raw === tafData.raw) {
-    marker.bindPopup(popupHtmlCache[cacheKey].content, {
-      maxWidth: 300,
-      minWidth: 200
-    });
-    return;
-  }
-
-  const color = MapRenderer.getMarkerColor(condition);
-
-  // Extract the true parsed object properties if they are nested inside a .parsed wrapper
-  const parsedData = tafData?.parsed ? tafData.parsed : tafData;
-
-  // Format TAF data for display - show the parsed info nicely
-  let tafHtml = '';
-  
-  if (parsedData && typeof parsedData === 'object') {
-    // Read from either parsedData or the top-level tafData as a fallback
-    const mainCond = parsedData.mainCondition || parsedData.condition || condition;
-    const groups = parsedData.groups || [];
-    const hasTemp = parsedData.hasTemporaryConditions || false;
-    const tempSev = parsedData.tempSeverity || 'N/A';
-
-    tafHtml = `
-      <div style="margin-top: 8px; font-size: 12px;">
-        <div><strong>Condition:</strong> <span style="color: ${color}; font-weight: bold;">${mainCond}</span></div>
-        ${hasTemp ? `<div><strong>Temporary Conditions:</strong> Yes (Severity: ${tempSev})</div>` : ''}
-        ${groups.length > 0 ? `
-          <div style="margin-top: 6px;"><strong>Forecast Periods:</strong></div>
-          <ul style="margin: 4px 0; padding-left: 16px;">
-            ${groups.map(g => `<li>${g.type}: ${g.condition}</li>`).join('')}
-          </ul>
-        ` : ''}
-      </div>
-    `;
-  }
-
-  let formattedRawTAF = ''
-
-  if(tafData && tafData.raw) {
-    // --- Clean up and format the Raw TAF text into structural lines ---
-    // Updated pattern handles standalone PROB30/40, PROB30/40 TEMPO, PROB30/40 INTER, BECMG, TEMPO, INTER, and FM groups
-    const lineBreakPattern = /\b(PROB\d{2}(?:\s+(?:TEMPO|INTER))?|TEMPO|INTER|BECMG|FM\d{4,6})\b/gi;
-    
-    // Add newlines & clean up outer spaces
-    formattedRawTAF = tafData.raw.replace(lineBreakPattern, '\n$1').trim();
-  } else {
-    formattedRawTAF = 'No TAF data available';
-  }
-
-  // Split the formatted TAF into an array of lines, then map each line to a distinct div block
-  const tafLinesHtml = formattedRawTAF.split('\n').map(line => {
-    // This regex finds any block of text starting with - or + (e.g., -SHRA)
-    // and wraps it in a span that forbids line-breaking.
-    const protectedLine = line.replace(/([+-][A-Z]+)/g, '<span style="white-space: nowrap;">$1</span>');
-
-    return `
-      <div style="
-        padding-left: 12px; 
-        text-indent: -12px; 
-        white-space: pre-wrap; 
-        word-break: keep-all;
-        margin-bottom: 2px;
-      ">${protectedLine}</div>
-    `;
-  }).join('');
-
-  const popupContent = `
-    <div style="min-width: 200px;">
-      <h3 style="margin: 0 0 4px 0; font-size: 16px;">${airport.name}</h3>
-      <div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px;">ICAO: ${airport.icao}</div>
-      
-      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-        <div style="
-          width: 12px; 
-          height: 12px; 
-          border-radius: 50%; 
-          background-color: ${color};
-          border: 1px solid rgba(255,255,255,0.2);
-          box-shadow: 0 0 8px ${color}80;
-          display:inline-block;
-        "></div>
-        <span style="font-weight: bold; color: ${color}; font-size: 14px;">
-          ${condition === 'IFR' ? 'IFR / Severe Weather' : condition === 'MVFR' ? 'MVFR' : 'VFR'}
-        </span>
-      </div>
-
-      <div style="border-top: 1px solid #334155; padding-top: 8px;">
-        <div style="font-weight: bold; font-size: 12px; margin-bottom: 6px;">Raw TAF:</div>
-        <div style="
-          font-size: 10px; 
-          max-height: 150px; 
-          overflow-y: auto;
-          background: #1e293b;
-          color: #f1f5f9;
-          padding: 6px; 
-          border-radius: 4px;
-          margin: 0;
-          font-family: monospace;
-        ">
-          ${tafLinesHtml}
-        </div>
-      </div>
-    </div>
-  `;
-
-  marker.bindPopup(popupContent, {
-    maxWidth: 300,
-    minWidth: 200
-  });
-
-  popupHtmlCache[cacheKey] = { raw: tafData.raw, content: popupContent };
-}
-
-// Add a method to updatePopup to the module
-MapRenderer.updatePopup = updatePopup;
