@@ -56,7 +56,7 @@ const APP = (function() {
    */
   async function fetchTafData(icaoCodes) {
     const ids = icaoCodes.join(',');
-    const url = `${TAF_API_BASE}?ids=${ids}&format=xml&hoursBeforeNow=1`;
+    const url = `${TAF_API_BASE}?ids=${ids}&format=xml`;
 
     try {
       const response = await fetch(url);

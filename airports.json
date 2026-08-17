@@ -1,5 +1,6 @@
 [
   { "icao": "KCVG", "name": "Cincinnati/Northern Kentucky International Airport" },
+  { "icao": "OMDB", "name": "Dubai International Airport" },
   { "icao": "NZAA", "name": "Auckland Airport" },
   { "icao": "NZCH", "name": "Christchurch Airport" },
   { "icao": "PHNL", "name": "Daniel K. Inouye International Airport" },
@@ -9,6 +10,8 @@
   { "icao": "RJGG", "name": "Chubu Centrair International Airport" },
   { "icao": "RJTT", "name": "Tokyo Haneda International Airport" },
   { "icao": "RKSI", "name": "Incheon International Airport" },
+  { "icao": "VABB", "name": "Chhatrapati Shivaji Maharaj International Airport" },
+  { "icao": "VIDP", "name": "Indira Gandhi International Airport" },
   { "icao": "VHHH", "name": "Hong Kong International Airport" },
   { "icao": "VTBS", "name": "Suvarnabhumi Airport" },
   { "icao": "WIII", "name": "Jakarta Soekarno-Hatta International Airport" },
